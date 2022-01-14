@@ -6,6 +6,7 @@ class VideoView: UIView {
     var playerLayer: AVPlayerLayer? = AVPlayerLayer()
     var player: AVPlayer? = AVPlayer()
     var isLoop: Bool = false
+    var rate: Float = 1
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
@@ -16,12 +17,13 @@ class VideoView: UIView {
         super.layoutSubviews()
         updateFrames()
     }
-    func configureVideo(withName name: String, loops: Bool = true, contentMode: AVLayerVideoGravity = .resizeAspect) {
-        guard let path = Bundle.main.path(forResource: name, ofType:"mp4") else {
-            debugPrint("video not found")
-            return
+    func configureVideo(withURL url: URL?, rate: Float = 1, loops: Bool = true, contentMode: AVLayerVideoGravity = .resizeAspect) {
+        if let url = url {
+            self.player?.replaceCurrentItem(with: AVPlayerItem(url: url))
+        }else{
+            self.player?.replaceCurrentItem(with: nil)
         }
-        self.player?.replaceCurrentItem(with: AVPlayerItem(url: URL(fileURLWithPath: path)))
+        self.rate = rate
         self.isLoop = loops
         playerLayer?.player = self.player
         playerLayer?.videoGravity = contentMode 
@@ -31,8 +33,12 @@ class VideoView: UIView {
         }
         NotificationCenter.default.addObserver(self, selector: #selector(reachTheEndOfTheVideo(_:)), name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: self.player?.currentItem)
     }
+    func isPlaying()->Bool{
+        player?.rate != 0 && player?.error == nil
+    }
     func play() {
         player?.play()
+        player?.rate = rate
     }
     func pause() {
         player?.pause()
@@ -46,6 +52,7 @@ class VideoView: UIView {
             player?.pause()
             player?.seek(to: CMTime.zero)
             player?.play()
+            player?.rate = rate
         }
     }
 }
